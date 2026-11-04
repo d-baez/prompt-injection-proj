@@ -1,0 +1,45 @@
+% Main document for the student proposal. Compile with pdfLaTeX.
+% Keep the supplied style files and course_preprint.sty beside this file.
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\usepackage{course_preprint}
+\usepackage[T1]{fontenc}
+\usepackage{microtype,tabularx,array}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1pt}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\block}[2]{\par\vspace{2pt}\noindent\textbf{#1}\hfill #2\par\vspace{1pt}}
+\hypersetup{pdftitle={Rutgers ECE 424 Fall 2026 Course Project Proposal}}
+\title{\raggedright Project Proposal: Evaluating Defenses Against Prompt Injection Attacks}
+\author{Daniel Báez [dmb574], Michael Cardenas [mac934], Jiajun Du [jd2100] \\
+Rutgers University \quad ECE 424, Fall 2026}
+\begin{document}
+\maketitle
+\vspace{-18pt}
+\textbf{Due: Monday, October 5, 2026, 11:59 PM New Jersey time}\par
+\textbf{Selected topic:} L02 --- Formalizing and Benchmarking Prompt Injection Attacks and Defenses\par
+
+\block{1. Research question and safe scope}{5 points}
+\textbf{Question / claim:} Can two prompt-injection defenses reduce attack success while preserving normal-task accuracy? We will test this trade-off rather than assume either defense is effective.\par
+\textbf{Setting and threat model:} We propose one fixed API LLM (GPT-4o-mini; snapshot and access to be confirmed) for sentiment classification on a public SST-2 subset. The protected goal is correct positive/negative classification following the trusted task instruction. An attacker can insert malicious instructions into untrusted review text to make the model output the fixed marker \texttt{INJECTED}; the attacker cannot change model weights or the system configuration.\par
+\textbf{Resources and authorization:} Python, the authors' public code and data, and an authorized model API will support a controlled test harness. The proposed budget is 1,080 model calls, with a dollar cap to be agreed before testing. We will follow data/code licenses and API terms, use no private data, and test no third-party applications.\par
+
+\block{2. Baseline, contribution, and evaluation}{5 points}
+\textbf{Prior work and baseline:} Building on the original benchmark, we will test whether prompt-injection vulnerabilities remain effective under a current model interface and evaluate whether simple defenses reduce attack success without significantly harming normal-task performance. Liu et al., \emph{Formalizing and Benchmarking Prompt Injection Attacks and Defenses} (USENIX Security 2024), provide a common benchmark. We will reuse \href{https://github.com/liu00222/Open-Prompt-Injection}{Open-Prompt-Injection}'s code and SST-2 setup, begin with no defense, and document changes to the model interface and marker-based success rule.\par
+\textbf{Bounded contribution:} We propose two attack families: instruction override (ignore the task) and fake completion (imitate a completed response, then redirect). We will compare no defense with two separate defenses: delimiting untrusted text and explicit instructions to disregard instructions within that text. Both attacks will be tested under all three conditions, followed by comparison and failure analysis.\par
+\textbf{Experiment and metric:} Use 20 tuning examples and 100 disjoint final cases, with balanced sentiment labels. Freeze prompts, case IDs, model revision, decoding settings, and scoring before final evaluation. Each condition uses the same cases and one query per case, with no adaptive retries: 6 attacked conditions plus 3 clean conditions yield 900 final calls; tuning is capped at 180 calls. Attack Success Rate is the fraction of attacked outputs matching \texttt{INJECTED} after whitespace normalization. Normal-task accuracy is label accuracy on clean cases; invalid outputs count as incorrect. Report each defense's ASR reduction and clean-accuracy change relative to no defense, and inspect failures.\par
+
+\block{3. Individual ownership and work allocation}{5 points}
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{1.10in}|>{\raggedright\arraybackslash}p{1.02in}|Y|>{\raggedright\arraybackslash}p{1.03in}|}\hline
+\textbf{Member} & \textbf{Owned technical component} & \textbf{Owned experiments (at least two)} & \textbf{Responsible report sections} \\ \hline
+Daniel Báez & Attack construction and Benchmark adaptation & 1: Attack calibration on tuning set \newline 2: ASR modeling & Settings \& threat models ; Pior work \& baseline \\ \hline
+Michael Cardenas & Defense implementation and output scoring & 1: Compare both defenses against the two attack families using ASR\newline 2: Categorize failed defenses & Defense Design; Defense Evaluation; Failure Analysis \\ \hline
+Jiajun Du & Experiment and evaluation pipeline & 1: Compare two prompt injection attacks under the same no-defense baseline.\newline 2: Compare two defense methods using attack success rate and normal-task performance. & Experiment Design, Evaluation, Results Analysis \\ \hline
+\end{tabularx}
+\endgroup
+\end{document}

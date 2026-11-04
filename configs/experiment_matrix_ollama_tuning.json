@@ -1,0 +1,8 @@
+{
+  "models": ["ollama_qwen3-8b"],
+  "target_datasets": ["sst2"],
+  "injected_datasets": ["sst2"],
+  "data_num": 20,
+  "attack_strategies": ["ignore", "fake_comp"],
+  "defenses": ["no", "delimiters", "instructional"]
+}

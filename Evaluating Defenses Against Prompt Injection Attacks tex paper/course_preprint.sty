@@ -1,0 +1,15 @@
+% Course-specific preprint wrapper for the instructor-supplied ICLR 2027 style.
+% The upstream conference style is not modified.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{course_preprint}[2026/09/25 Non-anonymous course preprint]
+\RequirePackage{iclr2027_conference}
+% Show the authors and suppress the anonymous-review line-number ruler.
+\iclrfinalcopy
+% The upstream final mode says "Published as a conference paper".
+% Replace that label after the title is produced; this is a course preprint.
+\let\course@maketitle\maketitle
+\renewcommand{\maketitle}{%
+  \course@maketitle
+  \lhead{preprint -- Rutgers ECE 424 / ECE 539}%
+}
+\endinput
