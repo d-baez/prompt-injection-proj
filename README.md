@@ -4,7 +4,7 @@
 
 ## Midpoint Evidence Package (ECE 424, Topic L02)
 
-Project: *Evaluating Defenses Against Prompt Injection Attacks*. Team: Daniel Báez (dmb574) and Michael Cardenas (mac934). The two-person team is pending confirmation with Professor Zhang.
+Project: *Evaluating Defenses Against Prompt Injection Attacks*. Team: Daniel Báez (dmb574) and Michael Cardenas (mac934).
 
 ### 1. Runnable baseline and harness
 
