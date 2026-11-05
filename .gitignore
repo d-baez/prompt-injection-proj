@@ -19,3 +19,6 @@ run.sh
 form_builder.py
 
 *.lock
+
+# Generated knowledge graph outputs
+graphify-out/

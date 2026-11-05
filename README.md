@@ -18,6 +18,7 @@ uv sync
 ```
 
 - Dependencies: `pyproject.toml` declares none, so the packages the model registry imports must be installed into the venv. The working set is `numpy openai pandas google-generativeai tiktoken transformers peft fschat torch accelerate rouge scipy spacy datasets==2.19.2`. Pin `datasets` to 2.19.2 to match `environment.yml`.
+- Deprecation: `google-generativeai` (imported by `OpenPromptInjection/models/PaLM2.py`) has ended support and prints this warning on import: *"All support for the `google.generativeai` package has ended. It will no longer be receiving updates or bug fixes. Please switch to the `google.genai` package as soon as possible."* The local Ollama path does not call Google APIs, but the model registry imports PaLM2 eagerly, so the package is still needed until PaLM2 is migrated to `google-genai`. Migration is not done yet.
 - Run any script with the repo root on the path, for example `PYTHONPATH=. uv run python ...`. Running from `scripts/` alone fails with `ModuleNotFoundError: No module named 'OpenPromptInjection'`.
 
 ### 2. Sanity check and trace

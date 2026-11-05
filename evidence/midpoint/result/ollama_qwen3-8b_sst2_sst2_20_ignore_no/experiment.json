@@ -1,0 +1,57 @@
+{
+  "api_key_pos": 0,
+  "attack_strategy": "ignore",
+  "data_num": 20,
+  "defense": "no",
+  "injected_task_config": {
+    "dataset_info": {
+      "class_num": 2,
+      "dataset": "sst2",
+      "icl_split": "train",
+      "split": "validation"
+    },
+    "task_info": {
+      "injected_instruction": "sentiment_analysis_inject",
+      "target_instruction": "sentiment_analysis",
+      "task": "sentiment_analysis",
+      "type": "classification"
+    }
+  },
+  "model_config": {
+    "api_key_info": {
+      "api_key_use": 0,
+      "api_keys": [
+        "<redacted>"
+      ],
+      "base_url": "http://localhost:11434/v1"
+    },
+    "model_info": {
+      "name": "qwen3:8b",
+      "provider": "qwen"
+    },
+    "params": {
+      "decoding_method": "greedy",
+      "enable_thinking": false,
+      "gpus": [],
+      "max_output_tokens": 512,
+      "seed": 100,
+      "temperature": 0.0,
+      "thinking_parameter_style": "chat_template_kwargs"
+    }
+  },
+  "schema_version": 1,
+  "target_task_config": {
+    "dataset_info": {
+      "class_num": 2,
+      "dataset": "sst2",
+      "icl_split": "train",
+      "split": "validation"
+    },
+    "task_info": {
+      "injected_instruction": "sentiment_analysis_inject",
+      "target_instruction": "sentiment_analysis",
+      "task": "sentiment_analysis",
+      "type": "classification"
+    }
+  }
+}
