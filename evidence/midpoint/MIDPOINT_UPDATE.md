@@ -90,6 +90,7 @@ Beyond the baseline, the project will add:
 - **Defense mapping.** The proposal's delimiting and instruction-based defenses map to the repo's `delimiters` and `instructional` defenses in `OpenPromptInjection/apps/defenses.py`. The implementation largely exists. Our work is to verify and evaluate it.
 - **Disjoint split.** The repo's `data_num` takes the first N examples and has no split offset. We will add a 20-case tuning split and a disjoint 100-case final split.
 - **Model expansion.** See section 7.
+- **Defense evaluation and failure analysis (Michael).** Score every defended run with the strict scorer, report ASR, ASR reduction relative to the no-defense run, and clean accuracy, and sort each attacked response into four categories: attack succeeded, invalid, incorrect label, correct label.
 
 ## 4. Evidence of team member work
 
@@ -107,6 +108,7 @@ Beyond the baseline, the project will add:
 - **Defense prompt trace:** `scripts/show_defense_prompts.py` writes the exact prompts for `no`, `delimiters`, and `instructional` under the `ignore` and `fake_comp` attacks to `evidence/defense_prompt_trace.txt`. It makes no model calls.
 - **Design doc:** `docs/defense_scoring.md`, with the scoring rules and a known limitation: the delimiter defense does not escape backticks, so input containing ``` can close the block early.
 - **Tests:** 12 unit tests in `tests/test_scoring.py`. Run with `uv run python -m unittest discover -s tests`. All 12 pass.
+- **Strict re-scoring of the midpoint run:** [`evidence/scoring/MIDPOINT_SCORING.md`](../scoring/MIDPOINT_SCORING.md). The repo scorer's ASV 0.70 / clean accuracy 0.95 become 0.55 / 0.70 under strict scoring (9 invalid attacked and 5 invalid clean outputs). It confirms on data that every injected label is the opposite of the true label, so label-based ASV cannot be separated from misclassification in the current setup. Labels are reconstructed from the split code and reproduce the logged PNA-T, PNA-I and ASV exactly.
 - **Not yet run:** no defended experiment against a real model. No defended ASR or accuracy numbers exist yet.
 
 ## 5. Experimental protocol and logs

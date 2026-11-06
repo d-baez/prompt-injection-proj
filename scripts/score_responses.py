@@ -54,18 +54,19 @@ def _labels(path):
         return [int(x) for x in archive["label"].tolist()]
 
 
-def _data_dir(task_config, num):
+def _data_dir(task_config, num, data_root=None):
     info, data = task_config["task_info"], task_config["dataset_info"]
-    return DATA_DIR / f"{info['task']}_{data['dataset']}_{data['split']}_{num}"
+    root = DATA_DIR if data_root is None else Path(data_root)
+    return root / f"{info['task']}_{data['dataset']}_{data['split']}_{num}"
 
 
-def score_experiment(result_dir, out_root):
+def score_experiment(result_dir, out_root, data_root=None):
     result_dir = Path(result_dir)
     meta = json.loads((result_dir / "experiment.json").read_text())
     num = meta["data_num"]
-    target_labels = _labels(_data_dir(meta["target_task_config"], num) / "target_data.npz")
+    target_labels = _labels(_data_dir(meta["target_task_config"], num, data_root) / "target_data.npz")
     injected_labels = _labels(
-        _data_dir(meta["injected_task_config"], num) / "injected_data.npz"
+        _data_dir(meta["injected_task_config"], num, data_root) / "injected_data.npz"
     )
 
     attack_rows = scoring.score_responses(
@@ -119,6 +120,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("result_dirs", nargs="+", type=Path)
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "evidence" / "scoring")
+    parser.add_argument(
+        "--data-dir", type=Path, default=None,
+        help="folder holding <task>_<dataset>_<split>_<N>/ label files (default: data/)",
+    )
     args = parser.parse_args(argv)
 
     summaries = []
@@ -126,7 +131,7 @@ def main(argv=None):
         if not (result_dir / "experiment.json").is_file():
             print(f"skip {result_dir}: no experiment.json (run not finished?)", file=sys.stderr)
             continue
-        summaries.append(score_experiment(result_dir, args.out))
+        summaries.append(score_experiment(result_dir, args.out, args.data_dir))
     if not summaries:
         print("No finished experiments found.", file=sys.stderr)
         return 1
