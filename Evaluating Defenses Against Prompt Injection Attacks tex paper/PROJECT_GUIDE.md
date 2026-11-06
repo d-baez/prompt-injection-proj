@@ -49,12 +49,12 @@ Or upload the folder to Overleaf, set pdfLaTeX, and compile. The proposal must f
 
 ## 3. Status and open items
 
-- [ ] Jiajun removed from the author line and the table (see section 4).
-- [ ] Typo in the table: "Pior work & baseline" should read "Prior work & baseline" (Daniel's row).
+- [x] Jiajun removed from the author line and the table (see section 4).
+- [x] Typo in the table: "Pior work & baseline" should read "Prior work & baseline" (Daniel's row).
 - [ ] Confirm the GPT-4o-mini snapshot and API access, and agree on a dollar cap before testing.
-- [ ] Confirm with Professor Zhang that a two-person team is approved. The README allows an instructor-approved pair, and a 424 team normally has three.
-- [ ] Check the due date. The line in `main.tex` says Monday, October 5, 2026, which has passed. Confirm the current deadline on Canvas.
-- [ ] Recompile `main.pdf` once the `main.tex` edits are final.
+- [x] Confirm with Professor Zhang that a two-person team is approved. The README allows an instructor-approved pair, and a 424 team normally has three.
+- [x] Check the due date. The line in `main.tex` says Monday, October 5, 2026, which has passed. Confirm the current deadline on Canvas.
+- [x] Recompile `main.pdf` once the `main.tex` edits are final.
 
 ## 4. Proposed work split (draft, not yet agreed with Michael)
 

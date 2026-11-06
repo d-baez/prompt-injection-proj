@@ -9,6 +9,7 @@ from .Llama3 import Llama3
 from .DeepSeek import DeepSeekWrapper, DeepSeekR1DistillLLaMAWrapper, DeepSeekR1DistillQwenWrapper
 from .Qwen import Qwen
 from .Gemma import Gemma
+from .Ollama import Ollama
 
 
 MODEL_REGISTRY = {
@@ -23,6 +24,7 @@ MODEL_REGISTRY = {
     'internlm': Internlm,
     'qwen': Qwen,
     'gemma': Gemma,
+    'ollama': Ollama,
 }
 
 QLORA_MODEL_REGISTRY = {
