@@ -12,7 +12,7 @@
 \newcommand{\block}[2]{\par\vspace{2pt}\noindent\textbf{#1}\hfill #2\par\vspace{1pt}}
 \hypersetup{pdftitle={Rutgers ECE 424 Fall 2026 Course Project Proposal}}
 \title{\raggedright Project Proposal: Evaluating Defenses Against Prompt Injection Attacks}
-\author{Daniel Báez [dmb574], Michael Cardenas [mac934], Jiajun Du [jd2100] \\
+\author{Daniel Báez [dmb574], Michael Cardenas [mac934] \\
 Rutgers University \quad ECE 424, Fall 2026}
 \begin{document}
 \maketitle
@@ -37,9 +37,8 @@ Rutgers University \quad ECE 424, Fall 2026}
 \renewcommand{\arraystretch}{1.05}
 \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{1.10in}|>{\raggedright\arraybackslash}p{1.02in}|Y|>{\raggedright\arraybackslash}p{1.03in}|}\hline
 \textbf{Member} & \textbf{Owned technical component} & \textbf{Owned experiments (at least two)} & \textbf{Responsible report sections} \\ \hline
-Daniel Báez & Attack construction and Benchmark adaptation & 1: Attack calibration on tuning set \newline 2: ASR modeling & Settings \& threat models ; Pior work \& baseline \\ \hline
-Michael Cardenas & Defense implementation and output scoring & 1: Compare both defenses against the two attack families using ASR\newline 2: Categorize failed defenses & Defense Design; Defense Evaluation; Failure Analysis \\ \hline
-Jiajun Du & Experiment and evaluation pipeline & 1: Compare two prompt injection attacks under the same no-defense baseline.\newline 2: Compare two defense methods using attack success rate and normal-task performance. & Experiment Design, Evaluation, Results Analysis \\ \hline
+Daniel Báez & Attack construction, benchmark adaptation, and model-call runner (API client, frozen config, call log, budget cap) & 1: Attack calibration on tuning set\newline 2: Attack comparison under the no-defense baseline; ASR modeling & Settings \& threat models; Prior work \& baseline; Experiment design (attacks, tuning, budget); Evaluation (metric definitions); attack-side results \\ \hline
+Michael Cardenas & Defense implementation, output scoring, and metrics layer (ASR, ASR reduction, clean accuracy) & 1: Compare both defenses against both attack families on ASR and clean accuracy\newline 2: Categorize failed defenses & Defense design; Defense evaluation; Failure analysis; defense-side results \\ \hline
 \end{tabularx}
 \endgroup
 \end{document}
