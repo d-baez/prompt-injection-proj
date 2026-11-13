@@ -88,6 +88,17 @@ def parse_args():
         type=non_negative_int,
         help="maximum retries for each failed model query (default: 0)",
     )
+    parser.add_argument(
+        "--max-parallel",
+        default=0,
+        type=non_negative_int,
+        help="maximum experiments running at once; 0 means no limit (default: 0)",
+    )
+    parser.add_argument(
+        "--skip-completed",
+        action="store_true",
+        help="skip experiments whose attack and target response files already exist",
+    )
     return parser.parse_args()
 
 
@@ -312,11 +323,42 @@ def check_complete(log_paths):
     return not failures
 
 
-def execute(matrix, log_dir, result_dir, dry_run=False, max_retries=0):
+def _is_complete(result_dir, experiment):
+    folder = result_dir / experiment.name
+    return all(
+        (folder / name).is_file()
+        for name in ("attack_responses.npz", "target_task_responses.npz")
+    )
+
+
+def _run_limited(experiments, log_dir, result_dir, max_parallel, max_retries):
+    """Start experiments one at a time, never more than max_parallel at once."""
+    failures = []
+    running = []
+    for experiment in experiments:
+        while len(running) >= max_parallel:
+            failures.extend(wait_for_experiments([running.pop(0)]))
+        running.append(
+            start_experiment(experiment, log_dir, result_dir, max_retries=max_retries)
+        )
+    failures.extend(wait_for_experiments(running))
+    return failures
+
+
+def execute(matrix, log_dir, result_dir, dry_run=False, max_retries=0,
+            max_parallel=0, skip_completed=False):
     log_dir = Path(log_dir).expanduser().resolve()
     result_dir = Path(result_dir).expanduser().resolve()
     experiments = build_experiments(matrix)
     LOGGER.info("Validated %d experiments", len(experiments))
+
+    if skip_completed:
+        remaining = [e for e in experiments if not _is_complete(result_dir, e)]
+        LOGGER.info(
+            "Skipping %d completed experiments; %d remaining",
+            len(experiments) - len(remaining), len(remaining),
+        )
+        experiments = remaining
 
     if dry_run:
         for experiment in experiments:
@@ -330,6 +372,8 @@ def execute(matrix, log_dir, result_dir, dry_run=False, max_retries=0):
 
     log_dir.mkdir(parents=True, exist_ok=True)
     result_dir.mkdir(parents=True, exist_ok=True)
+    if max_parallel > 0:
+        return _run_limited(experiments, log_dir, result_dir, max_parallel, max_retries)
     failures = []
 
     # Preserve the historical execution shape: one target dataset at a time,
@@ -371,6 +415,8 @@ def main():
         result_dir=args.result_dir,
         dry_run=args.dry_run,
         max_retries=args.max_retries,
+        max_parallel=args.max_parallel,
+        skip_completed=args.skip_completed,
     )
     if failures:
         raise SystemExit(1)
