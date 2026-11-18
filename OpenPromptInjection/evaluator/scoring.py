@@ -156,5 +156,33 @@ def summarize(rows):
     return summary
 
 
+def lenient_sst2_label(response):
+    """Label the repo's own SST-2 rule would give (``eval_sst2`` in evaluator/utils.py).
+
+    Copied, not imported, so this module stays stdlib-only. Checks for the
+    substring "positive" before "negative", so a two-answer output such as
+    "negative / positive" is read as positive. Returns 1, 0, 2 (other), or
+    -1 (empty).
+    """
+    if response is None or str(response) == "":
+        return -1
+    text = str(response).lower().replace("answer: ", "").replace("answer:", "")
+    if "positive" in text:
+        return 1
+    if "negative" in text:
+        return 0
+    if "neutral" in text:
+        return 1
+    return 2
+
+
+def lenient_match_rate(responses, labels):
+    """Repo-rule accuracy: share of responses whose lenient label equals the label."""
+    if len(responses) != len(labels):
+        raise ValueError(f"{len(responses)} responses but {len(labels)} labels")
+    hits = sum(lenient_sst2_label(r) == int(l) for r, l in zip(responses, labels))
+    return _rate(hits, len(responses))
+
+
 def _rate(numerator, denominator):
     return None if denominator == 0 else numerator / denominator
