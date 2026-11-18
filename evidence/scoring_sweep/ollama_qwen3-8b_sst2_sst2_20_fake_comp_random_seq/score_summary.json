@@ -34,5 +34,7 @@
     "label_accuracy": 0.9,
     "invalid_rate": 0.0,
     "blocked_rate": 0.0
-  }
+  },
+  "asv_lenient": 0.95,
+  "pna_t_lenient": 0.9
 }
