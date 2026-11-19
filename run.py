@@ -28,7 +28,7 @@ SUPPORTED_DEFENSES = {
 SUPPORTED_MODEL_PROVIDERS = {
     'palm2', 'vicuna', 'gpt', 'gpt_azure', 'llama', 'llama3',
     'mistral', 'flan', 'internlm', 'deepseek',
-    'qwen', 'gemma',
+    'qwen', 'gemma', 'ollama',
 }
 
 
@@ -172,8 +172,10 @@ def build_experiments(matrix):
 
         for target_dataset in matrix["target_datasets"]:
             target_config = open_config(_config_path("task_configs", target_dataset))
-            if target_config['dataset_info']['dataset'] == 'compromise':
-                raise ValueError("The compromise task can only be an injected task")
+            if target_config['dataset_info']['dataset'] in ('compromise', 'injected_marker'):
+                raise ValueError(
+                    f"The {target_config['dataset_info']['dataset']} task can only be an injected task"
+                )
             if target_config['dataset_info']['dataset'] == 'math500':
                 raise ValueError(
                     "MATH-500 evaluation is not implemented; refusing to launch an unscorable experiment"
