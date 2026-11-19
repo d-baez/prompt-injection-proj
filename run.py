@@ -26,7 +26,7 @@ SUPPORTED_DEFENSES = {
     'known-answer', 'paraphrasing',
 }
 SUPPORTED_MODEL_PROVIDERS = {
-    'palm2', 'vicuna', 'gpt', 'gpt_azure', 'llama', 'llama3',
+    'palm2', 'gemini', 'vicuna', 'gpt', 'gpt_azure', 'llama', 'llama3',
     'mistral', 'flan', 'internlm', 'deepseek',
     'qwen', 'gemma', 'ollama',
 }

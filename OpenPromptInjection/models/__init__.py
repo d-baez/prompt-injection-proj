@@ -14,6 +14,7 @@ from .Ollama import Ollama
 
 MODEL_REGISTRY = {
     'palm2': PaLM2,
+    'gemini': PaLM2,
     'vicuna': Vicuna,
     'gpt': GPT,
     'gpt_azure': GPTAzure,
