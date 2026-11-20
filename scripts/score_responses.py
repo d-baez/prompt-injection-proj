@@ -60,11 +60,16 @@ def _data_dir(task_config, num, data_root=None):
     return root / f"{info['task']}_{data['dataset']}_{data['split']}_{num}"
 
 
+# Defenses whose blank output means "blocked", not a malformed answer:
+# known-answer returns "" without calling the model when its detector flags
+# the input (Application.query); response-based replaces the model's answer
+# with "" when it is not a valid label (ResponseBasedDefense.process_response).
+# Other defenses never block.
+BLOCKING_DEFENSES = {"known-answer", "response-based"}
+
+
 def _blocked_mask(defense, responses):
-    # known-answer returns "" without calling the model when its detector
-    # flags the input (Application.query), so a blank response under that
-    # defense is a block, not a malformed answer. Other defenses never block.
-    if defense != "known-answer":
+    if defense not in BLOCKING_DEFENSES:
         return [False] * len(responses)
     return [r is None or str(r).strip() == "" for r in responses]
 

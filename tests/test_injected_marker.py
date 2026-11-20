@@ -146,6 +146,13 @@ class ScoreScriptMarkerTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         np.savez(path, **arrays)
 
+    def test_blank_counts_as_blocked_only_for_blocking_defenses(self):
+        responses = ["", "positive", None]
+        for defense in ("known-answer", "response-based"):
+            self.assertEqual(self.script._blocked_mask(defense, responses), [True, False, True])
+        for defense in ("no", "paraphrasing", "retokenization"):
+            self.assertEqual(self.script._blocked_mask(defense, responses), [False] * 3)
+
     def test_marker_experiment_needs_no_injected_label_file(self):
         data = self.tmp / "data" / "sentiment_analysis_sst2_validation_4"
         self._save(data / "target_data.npz", data=np.array(["a", "b", "c", "d"]),

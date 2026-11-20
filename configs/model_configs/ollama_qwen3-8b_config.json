@@ -15,6 +15,6 @@
         "max_output_tokens": 512,
         "decoding_method": "greedy",
         "enable_thinking": false,
-        "thinking_parameter_style": "chat_template_kwargs"
+        "thinking_parameter_style": "reasoning_effort"
     }
 }

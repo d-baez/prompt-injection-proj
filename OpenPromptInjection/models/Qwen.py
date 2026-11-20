@@ -39,9 +39,11 @@ class Qwen(Model):
         if self.thinking_parameter_style not in {
             "chat_template_kwargs",
             "direct",
+            "reasoning_effort",
         }:
             raise ValueError(
-                "thinking_parameter_style must be 'chat_template_kwargs' or 'direct'"
+                "thinking_parameter_style must be 'chat_template_kwargs', "
+                "'direct' or 'reasoning_effort'"
             )
 
         self.top_p = float(params.get("top_p", 0.8))
@@ -67,6 +69,10 @@ class Qwen(Model):
 
         if self.thinking_parameter_style == "direct":
             extra_body = dict(template_options)
+        elif self.thinking_parameter_style == "reasoning_effort":
+            # Ollama's OpenAI endpoint ignores chat_template_kwargs and
+            # think=false; reasoning_effort="none" is the switch it honors.
+            extra_body = {} if self.enable_thinking else {"reasoning_effort": "none"}
         else:
             extra_body = {"chat_template_kwargs": template_options}
 
