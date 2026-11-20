@@ -181,7 +181,9 @@ class ScoreScriptMarkerTests(unittest.TestCase):
         self.assertNotIn("label_asv_repo_style", attacked)
         self.assertEqual(attacked["counts"]["correct_label"], 1)
         self.assertEqual(attacked["counts"]["incorrect_label"], 1)
-        self.assertIn("| no | ignore | 4 | 25.0% | 50.0% | n/a |", (out / "summary.md").read_text())
+        self.assertIsNone(summary["asv_lenient"])
+        self.assertEqual(summary["pna_t_lenient"], 1.0)
+        self.assertIn("| no | ignore | 4 | 25.0% | 50.0% | n/a | n/a |", (out / "summary.md").read_text())
 
 
 if __name__ == "__main__":

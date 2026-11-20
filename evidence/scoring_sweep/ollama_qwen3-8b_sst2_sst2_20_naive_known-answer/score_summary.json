@@ -3,6 +3,7 @@
   "model": "qwen3:8b",
   "attack": "naive",
   "defense": "known-answer",
+  "injected_dataset": "sst2",
   "data_num": 20,
   "attacked": {
     "n": 20,

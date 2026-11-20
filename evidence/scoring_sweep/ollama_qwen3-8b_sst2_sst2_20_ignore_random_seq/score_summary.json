@@ -3,6 +3,7 @@
   "model": "qwen3:8b",
   "attack": "ignore",
   "defense": "random_seq",
+  "injected_dataset": "sst2",
   "data_num": 20,
   "attacked": {
     "n": 20,
