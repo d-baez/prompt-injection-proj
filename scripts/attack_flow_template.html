@@ -55,7 +55,8 @@
   .v-meh { background: rgba(240,180,41,.12); border: 1px solid var(--defense); color: #f5c95a; }
   .keys { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; }
   .keys span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; background: currentColor; }
-  #matrix { display: grid; gap: 2px; font-size: 10px; margin-top: 6px; }
+  #matrix .mgrid { display: grid; gap: 2px; font-size: 10px; margin-top: 4px; padding: 0; }
+  #matrix .mhead { font-size: 11px; color: var(--text); margin-top: 10px; }
   #matrix div { text-align: center; padding: 3px 0; border-radius: 3px; }
   #matrix .cell { cursor: pointer; color: #fff; font-weight: 600; }
   #matrix .cell.sel { outline: 2px solid #fff; }
@@ -78,6 +79,7 @@
 <div id="panel">
   <div class="sec">
     <div class="row">
+      <label>Model<select id="model"></select></label>
       <label>Attack<select id="attack"></select></label>
       <label>Defense<select id="defense"></select></label>
       <label>Sample<select id="example"></select></label>
@@ -98,13 +100,15 @@
     <div id="stepextra"></div>
   </div>
   <div class="sec">
-    <div class="sub">Label-ASV per attack × defense (qwen3:8b, n=20 · click a cell)</div>
+    <div class="sub">Attack × defense for each model · n=20 · click a cell to load it in the walkthrough</div>
+    <div class="sub" style="opacity:.7;font-size:11px">Metrics differ by sweep (see each heading). Mistral known-answer blocks are an exact-match artifact (evidence/scoring_marker_mistral/FINDINGS.md §2).</div>
     <div id="matrix"></div>
   </div>
 </div>
 <script>
 const DATA = /*__DATA__*/null;
 const $ = id => document.getElementById(id);
+let RUN = DATA.runs[0];
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const C = { trusted: '#5b9cf5', inject: '#f2555a', defense: '#f0b429', good: '#4cc38a' };
 
@@ -180,8 +184,8 @@ const keys = (...k) => `<div class="keys">${k.map(([c, t]) => `<span class="s-${
 
 // ---------- build the story for one (attack, defense, sample) ----------
 function buildSteps(a, d, exIdx) {
-  const pr = DATA.prompts, ex = pr.examples[exIdx], at = ex.attacks[a];
-  const run = DATA.results[`${a}|${d}`] || null;
+  const pr = RUN.prompts, ex = pr.examples[exIdx], at = ex.attacks[a];
+  const run = RUN.results[`${a}|${d}`] || null;
   const row = run && run.rows[ex.idx];
   const finalPrompt = at.prompts[d];
   const wraps = ['instructional','delimiters','xml','sandwich','random_seq'].includes(d);
@@ -190,7 +194,7 @@ function buildSteps(a, d, exIdx) {
   const S = [];
 
   S.push({ node: pick('main_execute'), color: C.trusted, title: 'execute() wires up the experiment', ref: 'main.py · execute()',
-    desc: `Loads three configs — target task <code>${pr.target_task}</code> (${DATA.prompts.target_task === 'sentiment_analysis' ? 'SST-2' : ''}), injected task, and the model <code>${esc(DATA.model)}</code> — then builds each component via the factory functions.` });
+    desc: `Loads three configs — target task <code>${pr.target_task}</code> (${RUN.prompts.target_task === 'sentiment_analysis' ? 'SST-2' : ''}), injected task, and the model <code>${esc(RUN.model)}</code> — then builds each component via the factory functions.` });
   S.push({ node: pick(`${P}tasks_targettask_targettask_getitem`, `${P}tasks_targettask_targettask`), via: [pick(`${P}tasks_init_create_task`)], color: C.trusted,
     title: 'TargetTask: the job the app is supposed to do', ref: 'tasks/TargetTask.py · create_task(target_config)',
     desc: `The trusted instruction plus one clean sample (sample #${ex.idx}, true label <code>${ex.label ? 'positive' : 'negative'}</code>).`,
@@ -240,8 +244,8 @@ function buildSteps(a, d, exIdx) {
       desc: 'Trusted instruction and untrusted data are concatenated into one string — the model can\'t tell which part is which. That is the vulnerability.',
       prompt: { h: 'final prompt sent to the model', segs: segments(finalPrompt, parts), extraCls: wraps ? 'defense' : null },
       extra: keys(['trusted', 'trusted instruction'], ['data', 'clean data'], ['inject', 'injected'], [wraps ? 'defense' : 'scaffold', wraps ? 'defense wrapper' : 'template']) });
-    S.push({ node: pick(`${P}models_model_model_query`), color: C.inject, title: 'Model.query() — the LLM answers', ref: `models/Ollama.py · ${esc(DATA.model)}`,
-      desc: 'Real response recorded in <code>evidence/scoring_sweep</code>:',
+    S.push({ node: pick(`${P}models_model_model_query`), color: C.inject, title: 'Model.query() — the LLM answers', ref: `models/Ollama.py · ${esc(RUN.model)}`,
+      desc: 'Real response recorded in <code>${RUN.sweep}</code>:',
       prompt: row ? { h: 'raw model response', segs: [{ cls: row.matches_injected_label ? 'inject' : (row.category === 'correct_label' ? 'data' : 'defense'), s: row.raw_response || '(empty)' }] } : null });
     S.push({ node: defNode(d, 'process_response'), color: d === 'response-based' ? C.defense : C.inject, title: 'defense.process_response()', ref: `${DEF_PY[d]}.process_response(response)`,
       desc: d === 'response-based' ? 'Outputs that aren\'t a valid label for the target task are replaced with "". A valid-but-wrong label still gets through.' : 'Identity — response returned as-is.' });
@@ -256,7 +260,7 @@ function buildSteps(a, d, exIdx) {
     color: verdict[0] === 'v-bad' ? C.inject : verdict[0] === 'v-good' ? C.good : C.defense, final: verdict[0],
     title: 'Evaluator scores the attack', ref: 'evaluator/Evaluator.py · __calc_ASV() + evaluator/scoring.py',
     desc: '', extra: `<div class="verdict ${verdict[0]}">${verdict[1]}<small>${verdict[2]}</small></div>` +
-      (run ? `<div class="prompt"><span class="h">whole run · ${a} × ${d} · n=20</span>Label-ASV ${(run.asv * 100).toFixed(0)}%   clean accuracy ${(run.clean_acc * 100).toFixed(0)}%\n` +
+      (run ? `<div class="prompt"><span class="h">whole run · ${a} × ${d} · n=20</span>${RUN.metric} ${(run.asr * 100).toFixed(0)}%   clean accuracy ${(run.clean_acc * 100).toFixed(0)}%\n` +
              `blocked ${c.blocked} · hijacked/incorrect ${c.incorrect_label} · invalid ${c.invalid} · correct ${c.correct_label}</div>` : '') });
   return S.filter(s => s.node);
 }
@@ -389,13 +393,17 @@ network.on('afterDrawing', ctx => {
 
 // ---------- controls ----------
 const fill = (sel, items, fmt = x => x) => { $(sel).innerHTML = items.map((v, i) => `<option value="${typeof v === 'number' ? i : v}">${fmt(v, i)}</option>`).join(''); };
+fill('model', DATA.runs.map((_, i) => i), (_, i) => DATA.runs[i].label);
 fill('attack', DATA.attacks); fill('defense', DATA.defenses);
-fill('example', DATA.prompts.examples.map((_, i) => i), (_, i) => `#${DATA.prompts.examples[i].idx}`);
+fill('example', RUN.prompts.examples.map((_, i) => i), (_, i) => `#${RUN.prompts.examples[i].idx}`);
 $('attack').value = 'combine'; $('defense').value = 'no';
-$('subtitle').textContent = `${DATA.nodes.length} code nodes from graphify-out/graph.json · target ${DATA.prompts.target_task} · model ${DATA.model}`;
+$('model').onchange = () => { RUN = DATA.runs[+$('model').value]; rebuild(); };
+$('subtitle').textContent = `${DATA.nodes.length} code nodes from graphify-out/graph.json · target ${RUN.prompts.target_task} · model ${RUN.model}`;
 
 function rebuild() {
   setPlaying(false);
+  RUN = DATA.runs[+$('model').value];
+  fill('example', RUN.prompts.examples.map((_, i) => i), (_, i) => `#${RUN.prompts.examples[i].idx}`);
   steps = buildSteps($('attack').value, $('defense').value, +$('example').value);
   $('steps').innerHTML = steps.map(() => '<div></div>').join('');
   [...$('steps').children].forEach((el, k) => el.onclick = () => { setPlaying(false); go(k, false); });
@@ -415,20 +423,25 @@ document.addEventListener('keydown', e => {
 });
 
 function drawMatrix() {
-  const A = DATA.attacks, Ds = DATA.defenses, m = $('matrix');
-  m.style.gridTemplateColumns = `78px repeat(${A.length}, 1fr)`;
-  let h = '<div></div>' + A.map(a => `<div class="hd">${a}</div>`).join('');
-  for (const d of Ds) {
-    h += `<div class="hd" style="text-align:right;padding-right:4px">${d}</div>`;
-    for (const a of A) {
-      const r = DATA.results[`${a}|${d}`], v = r ? r.asv : null;
-      const bg = v == null ? '#222' : `rgba(242,85,90,${0.12 + v * 0.88})`;
-      const sel = a === $('attack').value && d === $('defense').value ? ' sel' : '';
-      h += `<div class="cell${sel}" style="background:${bg}" data-a="${a}" data-d="${d}">${v == null ? '–' : Math.round(v * 100)}</div>`;
+  const A = DATA.attacks, Ds = DATA.defenses, host = $('matrix');
+  const cur = DATA.runs.indexOf(RUN);
+  host.innerHTML = DATA.runs.map((run, ri) => {
+    let h = `<div class="mhead">${esc(run.label)}</div>`;
+    h += `<div class="mgrid" style="grid-template-columns:78px repeat(${A.length}, 1fr)"><div></div>` + A.map(a => `<div class="hd">${a}</div>`).join('');
+    for (const d of Ds) {
+      h += `<div class="hd" style="text-align:right;padding-right:4px">${d}</div>`;
+      for (const a of A) {
+        const r = run.results[`${a}|${d}`], v = r ? r.asr : null;
+        const bg = v == null ? '#222' : `rgba(242,85,90,${0.12 + v * 0.88})`;
+        const sel = ri === cur && a === $('attack').value && d === $('defense').value ? ' sel' : '';
+        h += `<div class="cell${sel}" style="background:${bg}" data-r="${ri}" data-a="${a}" data-d="${d}">${v == null ? '–' : Math.round(v * 100)}</div>`;
+      }
     }
-  }
-  m.innerHTML = h;
-  m.querySelectorAll('.cell').forEach(el => el.onclick = () => { $('attack').value = el.dataset.a; $('defense').value = el.dataset.d; rebuild(); setPlaying(true); });
+    return h + '</div>';
+  }).join('');
+  host.querySelectorAll('.cell').forEach(el => el.onclick = () => {
+    $('model').value = el.dataset.r; RUN = DATA.runs[+el.dataset.r];
+    $('attack').value = el.dataset.a; $('defense').value = el.dataset.d; rebuild(); setPlaying(true); });
 }
 network.once('stabilizationIterationsDone', () => { rebuild(); setTimeout(() => setPlaying(true), 600); });
 </script>
