@@ -1,0 +1,8 @@
+{
+  "models": ["ollama_mistral"],
+  "target_datasets": ["sst2"],
+  "injected_datasets": ["injected_marker"],
+  "data_num": 20,
+  "attack_strategies": ["naive", "escape", "ignore", "fake_comp", "combine"],
+  "defenses": ["no", "instructional", "delimiters", "xml", "sandwich", "random_seq", "known-answer", "response-based", "paraphrasing", "retokenization"]
+}

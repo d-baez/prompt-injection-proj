@@ -83,7 +83,7 @@ class SummaryTests(unittest.TestCase):
         rows = scoring.score_responses(responses, [1, 1, 1, 0, 0], injected_labels=[0, 0, 0, 1, 1])
         summary = scoring.summarize(rows)
         self.assertEqual(summary["counts"], {
-            "attack_succeeded": 1, "invalid": 2, "incorrect_label": 1, "correct_label": 1,
+            "blocked": 0, "attack_succeeded": 1, "invalid": 2, "incorrect_label": 1, "correct_label": 1,
         })
         self.assertAlmostEqual(summary["asr_strict"], 0.2)
         self.assertAlmostEqual(summary["label_accuracy"], 0.2)
@@ -133,7 +133,7 @@ class ScoreScriptTests(unittest.TestCase):
         self.assertEqual(self.script.main([str(result), "--out", str(out)]), 0)
         summary = json.loads((out / result.name / "score_summary.json").read_text())
         self.assertEqual(summary["attacked"]["counts"], {
-            "attack_succeeded": 1, "invalid": 1, "incorrect_label": 1, "correct_label": 1,
+            "blocked": 0, "attack_succeeded": 1, "invalid": 1, "incorrect_label": 1, "correct_label": 1,
         })
         self.assertAlmostEqual(summary["clean"]["label_accuracy"], 0.75)
         lines = (out / result.name / "scored_attack.jsonl").read_text().splitlines()

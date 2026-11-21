@@ -9,10 +9,12 @@ from .Llama3 import Llama3
 from .DeepSeek import DeepSeekWrapper, DeepSeekR1DistillLLaMAWrapper, DeepSeekR1DistillQwenWrapper
 from .Qwen import Qwen
 from .Gemma import Gemma
+from .Ollama import Ollama
 
 
 MODEL_REGISTRY = {
     'palm2': PaLM2,
+    'gemini': PaLM2,
     'vicuna': Vicuna,
     'gpt': GPT,
     'gpt_azure': GPTAzure,
@@ -23,6 +25,7 @@ MODEL_REGISTRY = {
     'internlm': Internlm,
     'qwen': Qwen,
     'gemma': Gemma,
+    'ollama': Ollama,
 }
 
 QLORA_MODEL_REGISTRY = {

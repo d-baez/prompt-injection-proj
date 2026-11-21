@@ -1,6 +1,6 @@
 from .TargetTask import TargetTask
 from .InjectedTask import InjectedTask
-from .CompromiseTask import CompromiseTask
+from .CompromiseTask import CompromiseTask, MarkerTask
 from .Math500 import Math500Task
 
 def create_task(config, data_num, icl_num=20, for_injection=False):
@@ -10,6 +10,9 @@ def create_task(config, data_num, icl_num=20, for_injection=False):
     if config["dataset_info"]["dataset"] == "compromise":
         assert (for_injection), 'CompromiseTask is only for injection'
         return CompromiseTask(config, data_num)
+    if config["dataset_info"]["dataset"] == "injected_marker":
+        assert (for_injection), 'MarkerTask is only for injection'
+        return MarkerTask(config, data_num)
     if config["dataset_info"]["dataset"] == "math500":
         assert (not for_injection), 'Math500Task is not for injection'
         return Math500Task(config, data_num)

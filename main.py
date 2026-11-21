@@ -4,6 +4,8 @@ import logging
 import time
 from pathlib import Path
 
+from tqdm import tqdm
+
 import OpenPromptInjection as PI
 from OpenPromptInjection.utils import (
     CacheMismatchError,
@@ -149,7 +151,14 @@ def _query_samples(
         if checkpoint_path is not None
         else []
     )
-    for index in range(len(responses), total):
+    progress = tqdm(
+        range(len(responses), total),
+        initial=len(responses),
+        total=total,
+        desc="Querying",
+        unit="sample",
+    )
+    for index in progress:
         sample = samples[index]
         for attempt in range(max_retries + 1):
             try:
