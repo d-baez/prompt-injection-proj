@@ -12,13 +12,14 @@ Previous submission: [`midpoint/MIDPOINT_UPDATE.md`](midpoint/MIDPOINT_UPDATE.md
 
 | # | Claim (slide) | Evidence |
 |---|---|---|
-| 1 | With no defense, qwen3:8b follows the injected instruction most of the time (490/500 exact `INJECTED`, 98.0% [96.4, 98.9]); Mistral rarely does. | [`final100_qwen3-8b/FINDINGS.md`](final100_qwen3-8b/FINDINGS.md) §1; `final100_mistral/` (TODO: Mistral running) |
+| 1 | With no defense, qwen3:8b follows the injected instruction most of the time (490/500 exact `INJECTED`, 98.0% [96.4, 98.9]); Mistral rarely does (2/500, 0.4% [0.1, 1.4]), though it often mentions the marker while declining. | [`final100_qwen3-8b/FINDINGS.md`](final100_qwen3-8b/FINDINGS.md) §1; [`final100_mistral/FINDINGS.md`](final100_mistral/FINDINGS.md) §1 |
 | 2 | Prompt-wrapping defenses (instructional, delimiters, xml, sandwich, random_seq) cut qwen ASR only partly (61–98%); sandwich doesn't help; fake_comp and combine reach 100/100 against all of them. | [`final100_qwen3-8b/FINDINGS.md`](final100_qwen3-8b/FINDINGS.md) §2, [`tables.md`](final100_qwen3-8b/tables.md) |
 | 3 | known-answer and response-based block the attack on qwen (0/500) at no clean-accuracy cost (0 clean blocked), and response-based works only because `INJECTED` isn't a valid label. | [`final100_qwen3-8b/FINDINGS.md`](final100_qwen3-8b/FINDINGS.md) §4 |
 | 4 | paraphrasing reaches 0% ASR by deleting the review: attacked answers collapse to one label. | 100-case: all 500 attacked answers are `negative` ([`final100_qwen3-8b/FINDINGS.md`](final100_qwen3-8b/FINDINGS.md) §4). 20-case: [`scoring_marker_qwen3-8b/FINDINGS.md`](scoring_marker_qwen3-8b/FINDINGS.md) §3 |
 | 5 | The midpoint's qwen robustness came from a thinking bug, not resistance (191 → 542 of 1,000 exact `INJECTED` after the fix). | [`scoring_marker_qwen3-8b_thinking_on/`](scoring_marker_qwen3-8b_thinking_on/) vs [`scoring_marker_qwen3-8b/`](scoring_marker_qwen3-8b/); fix in commit `facfeba` |
 | 6 | Label-based ASV can't be separated from misclassification in the original SST-2 → SST-2 setup. | [`scoring/MIDPOINT_SCORING.md`](scoring/MIDPOINT_SCORING.md) (Michael) |
 | 7 | The final 100 cases don't overlap the 20 tuning cases. | `tests/test_split_offset.py`; commit `a3f35ab` |
+| 8 | On Mistral, instructional raises strict ASR (2 → 16 of 500, all under combine) instead of lowering it. | [`final100_mistral/FINDINGS.md`](final100_mistral/FINDINGS.md) §2 |
 
 ## 2. Setup and frozen configs
 
@@ -47,7 +48,7 @@ Previous submission: [`midpoint/MIDPOINT_UPDATE.md`](midpoint/MIDPOINT_UPDATE.md
 | Folder | Model | Status |
 |---|---|---|
 | [`final100_qwen3-8b/`](final100_qwen3-8b/) | qwen3:8b, thinking off | Done: 50/50 experiments, 2026-11-22 20:59 to 11-23 02:14. [`FINDINGS.md`](final100_qwen3-8b/FINDINGS.md), [`tables.md`](final100_qwen3-8b/tables.md) |
-| `final100_mistral/` | mistral 7B | TODO: running, started 2026-11-23 02:14 |
+| [`final100_mistral/`](final100_mistral/) | mistral 7B | Done: 50/50 experiments, 2026-11-23 02:14 to 12:28. [`FINDINGS.md`](final100_mistral/FINDINGS.md), [`tables.md`](final100_mistral/tables.md) |
 
 ### 4b. Tuning, 20 cases (supporting)
 
@@ -62,7 +63,7 @@ Previous submission: [`midpoint/MIDPOINT_UPDATE.md`](midpoint/MIDPOINT_UPDATE.md
 
 ## 5. Caveats (reported, not fixed)
 
-- **known-answer on Mistral.** `KnownAnswerDefense.detect` compares the answer to the secret exactly, and Mistral adds a leading space, so every prompt is blocked, clean ones included. This is an exact-match artifact, not a defense result. We left the upstream code as it is.
+- **known-answer on Mistral.** `KnownAnswerDefense.detect` compares the answer to the secret exactly, and Mistral adds a leading space, so every prompt is blocked, clean ones included: 100/100 clean blocked and 0% clean accuracy in the final run, with the reply `' DGDSGNH'` confirmed directly. This is an exact-match artifact, not a defense result. We left the upstream code as it is.
 - **retokenization undercounts on qwen.** qwen copies the split marker back as `I N J E C T E D`. Strict scoring doesn't count that, but the model did follow the instruction. Final run: 145 more of 500 (escape 46, combine 99), so 435/500 (87%) followed it against 290 (58%) strict.
 - **paraphrasing.** It removes the review along with the injection, so its 0% ASR isn't a usable defense result.
 - **response-based.** It works only because `INJECTED` isn't a sentiment label. An attack that asks for the wrong label would get past it.
