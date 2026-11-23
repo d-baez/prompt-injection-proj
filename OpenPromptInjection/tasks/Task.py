@@ -26,6 +26,9 @@ class Task:
 
         # Initialize the data of the task
         self.split = config["dataset_info"]["split"]
+        # Raw rows to skip before sampling, so a final split can be kept disjoint
+        # from an earlier tuning split drawn from the same raw data. 0 = upstream behavior.
+        self.split_offset = int(config["dataset_info"].get("split_offset", 0))
         self.num = num
         self.__prepare_data()
 
@@ -37,7 +40,8 @@ class Task:
         self.__prepare_icl_eamples()
     
     def get_data_saving_path(self):
-        saving_path = DATA_DIR / f"{self.task}_{self.dataset}_{self.split}_{self.num}"
+        suffix = f"_off{self.split_offset}" if self.split_offset else ""
+        saving_path = DATA_DIR / f"{self.task}_{self.dataset}_{self.split}_{self.num}{suffix}"
         saving_path.mkdir(parents=True, exist_ok=True)
         return saving_path
     
@@ -66,7 +70,7 @@ class Task:
         return saving_path
     
     def __split_dataset_and_save(self, raw_data):
-        assert (self.num*2 <= len(raw_data))
+        assert (self.num*2 <= len(raw_data) - self.split_offset)
 
         target_data, target_label, injected_data, injected_label = [], [], [], []
         if self.task_type == 'classification':
@@ -75,6 +79,8 @@ class Task:
         class_num_threshold = self.num / self.class_num
 
         for i, dp in tqdm(enumerate(raw_data)):
+            if i < self.split_offset:
+                continue
             if len(target_data) >= self.num:
                 if len(injected_data) >= self.num:
                     assert (len(target_data) == self.num and len(target_label) == self.num)
