@@ -1,0 +1,31 @@
+{
+  "models": [
+    "ollama_llama3.1-8b"
+  ],
+  "target_datasets": [
+    "sst2final"
+  ],
+  "injected_datasets": [
+    "injected_marker"
+  ],
+  "data_num": 100,
+  "attack_strategies": [
+    "naive",
+    "escape",
+    "ignore",
+    "fake_comp",
+    "combine"
+  ],
+  "defenses": [
+    "no",
+    "instructional",
+    "delimiters",
+    "xml",
+    "sandwich",
+    "random_seq",
+    "known-answer",
+    "response-based",
+    "paraphrasing",
+    "retokenization"
+  ]
+}
