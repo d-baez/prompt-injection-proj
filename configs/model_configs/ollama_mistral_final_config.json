@@ -1,0 +1,20 @@
+{
+    "model_info": {
+        "provider": "ollama",
+        "name": "mistral:latest"
+    },
+    "api_key_info": {
+        "api_keys": [
+            "ollama"
+        ],
+        "api_key_use": 0,
+        "base_url": "http://localhost:11434/v1"
+    },
+    "params": {
+        "temperature": 0.0,
+        "seed": 100,
+        "gpus": [],
+        "max_output_tokens": 512,
+        "decoding_method": "greedy"
+    }
+}

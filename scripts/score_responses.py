@@ -57,7 +57,9 @@ def _labels(path):
 def _data_dir(task_config, num, data_root=None):
     info, data = task_config["task_info"], task_config["dataset_info"]
     root = DATA_DIR if data_root is None else Path(data_root)
-    return root / f"{info['task']}_{data['dataset']}_{data['split']}_{num}"
+    offset = int(data.get("split_offset", 0))
+    suffix = f"_off{offset}" if offset else ""
+    return root / f"{info['task']}_{data['dataset']}_{data['split']}_{num}{suffix}"
 
 
 # Defenses whose blank output means "blocked", not a malformed answer:
