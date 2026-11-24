@@ -2,9 +2,9 @@
 
 ECE 424, Rutgers, Fall 2026. Topic L02. Team: Daniel Báez (dmb574), Michael Cardenas (mac934).
 
-**Frozen copy:** tag [`final-evidence-2026-11-24.3`](https://github.com/d-baez/prompt-injection-proj/tree/final-evidence-2026-11-24.3)
+**Frozen copy:** tag [`final-evidence-2026-11-24.4`](https://github.com/d-baez/prompt-injection-proj/tree/final-evidence-2026-11-24.4)
 on `d-baez/prompt-injection-proj`, plus a release zip of `evidence/`. Relative links in this file
-resolve inside that tag, so they don't change if `main` moves. It adds the Llama 3.1 8B run (first in `final-evidence-2026-11-24.1`), credit for the sweep runner (§7, first in `.2`) and the model call counts (§4c) to the first freeze,
+resolve inside that tag, so they don't change if `main` moves. It adds the Llama 3.1 8B run (first in `final-evidence-2026-11-24.1`), credit for the sweep runner (§7, first in `.2`) the model call counts (§4c, first in `.3`) and the model digests (§2) to the first freeze,
 [`final-evidence-2026-11-24`](https://github.com/d-baez/prompt-injection-proj/tree/final-evidence-2026-11-24) (qwen and Mistral only).
 
 Previous submission: [`midpoint/MIDPOINT_UPDATE.md`](midpoint/MIDPOINT_UPDATE.md).
