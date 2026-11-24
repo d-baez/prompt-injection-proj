@@ -67,6 +67,49 @@ Previous submission: [`midpoint/MIDPOINT_UPDATE.md`](midpoint/MIDPOINT_UPDATE.md
 | [`scoring_sweep/`](scoring_sweep/), `scoring_rerun*/` | qwen SST-2 → SST-2, thinking on | Superseded |
 | [`scoring/`](scoring/), [`midpoint/`](midpoint/) | Midpoint run and its strict re-scoring | Historical |
 
+### 4c. Model calls
+
+The proposal budgeted 1,080 calls: 900 final and at most 180 for tuning, for one paid API model. We moved to free
+local models, mainly because of cost, and ran a much larger matrix. In all we made about 48,140 calls: 35,769 final
+and about 12,370 tuning. The counts come from the `HTTP Request: POST` lines in each experiment's log under `log/`,
+which is gitignored. Every logged call returned HTTP 200, with no retries.
+
+**Final runs (100 cases, 50 experiments per model)**
+
+| Calls | qwen3:8b | Mistral 7B | Llama 3.1 8B |
+|---|---|---|---|
+| Attacked prompts (50 × 100) | 5,000 | 5,000 | 5,000 |
+| Clean prompts (50 × 100) | 5,000 | 5,000 | 5,000 |
+| Injected-task baseline (`no` defense only) | 500 | 500 | 500 |
+| paraphrasing: rewrite step | 1,000 | 1,000 | 1,000 |
+| known-answer: detection step, net of skipped blocked answers | +500 | +0 | +769 |
+| **Total** | **12,000** | **11,500** | **12,269** |
+
+- known-answer runs a detection call on every prompt and skips the answer call when the prompt is blocked. Its count
+  therefore depends on what it blocked: 500 attacked prompts on qwen, all 1,000 prompts on Mistral, and 231 attacked
+  prompts on Llama.
+- `main.py` caches responses per experiment, so each defense queried the same 100 clean cases 5 times, once per attack.
+  At temperature 0 the repeats add nothing. Sharing the clean run would have saved 4,000 calls per model.
+
+**Tuning (20 cases)**
+
+| Sweep | Model | Use | Calls |
+|---|---|---|---|
+| Marker sweep, thinking off | qwen3:8b | Current | 2,400 |
+| Marker sweep | Mistral 7B | Current | 2,300 |
+| SST-2 → SST-2 sweep, thinking off | qwen3:8b | Current | 2,400 |
+| Marker sweep, thinking on by accident (`log/_archive_qwen_thinking_on/`) | qwen3:8b | Superseded | 2,395 |
+| SST-2 → SST-2 sweep, thinking on, with reruns (`log/_archive_qwen_sst2_thinking_on/`) | qwen3:8b | Superseded | 2,597 |
+| Midpoint run, 2 attacks × 3 defenses | qwen3:8b | Superseded | about 280 |
+| **Total** | | | **about 12,370** |
+
+- Current tuning: 7,100 calls. Superseded: about 5,270, almost all from the qwen thinking bug (claim 5).
+- The midpoint figure is an estimate. Only `ignore_no.log` survives (60 calls). The other five experiments come from
+  the per-experiment pattern of 40 calls, or 60 with no defense.
+- 17 experiments in the thinking-on SST-2 archive were rerun into the same log files (`scoring_rerun*/`), and their
+  repeats are included.
+- Not counted: smoke tests (`scripts/ollama_smoke_test.py`). Llama had no tuning sweep.
+
 ## 5. Caveats (reported, not fixed)
 
 - **known-answer on Mistral.** `KnownAnswerDefense.detect` compares the answer to the secret exactly, and Mistral adds a leading space, so every prompt is blocked, clean ones included: 100/100 clean blocked and 0% clean accuracy in the final run, with the reply `' DGDSGNH'` confirmed directly. This is an exact-match artifact, not a defense result. We left the upstream code as it is.
