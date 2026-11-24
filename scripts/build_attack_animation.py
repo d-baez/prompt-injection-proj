@@ -2,14 +2,20 @@
 attack through the code graph produced by graphify.
 
 All prompt text is produced by the repo's own attacker/defense classes. The model
-responses and metrics come from two sweeps, one per model:
-  - qwen3:8b  (evidence/scoring_sweep): sentiment-style injected task, label-based ASV
-  - mistral   (evidence/scoring_marker_mistral): INJECTED marker task, strict marker ASR
-No model calls are made.
+responses and metrics come from the scored sweeps listed in RUNS (one entry per sweep;
+each sets its own target dataset and sample count). No model calls are made.
+
+To add a sweep, append a RUNS entry. Its result folders must be named the way run.py
+names them: {model_tag}_{target_dataset}_{injected_dataset}_{data_num}_{attack}_{defense}.
 
 Run from the project root:
     PYTHONPATH=. ./.venv/bin/python scripts/build_attack_animation.py
+
+Public copy for db444.xyz/attack-demo (vis-network served from the same origin):
+    PYTHONPATH=. ./.venv/bin/python scripts/build_attack_animation.py \
+        --out ../db444-hub/public/attack-demo/index.html --vis-src /attack-demo/vis-network.min.js
 """
+import argparse
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -23,24 +29,41 @@ ROOT = Path(__file__).resolve().parent.parent
 GRAPH = ROOT / "graphify-out" / "graph.json"
 OUT = ROOT / "graphify-out" / "attack_flow.html"
 TEMPLATE = Path(__file__).with_name("attack_flow_template.html")
+VIS_CDN = "https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"
 
-TARGET_DATASET = "sst2"
-DATA_NUM = 20
-EXAMPLES = [0, 1, 2]
+EXAMPLES = [0, 1, 2]  # sample indices shown in the walkthrough (within each run's split)
 ATTACKS = ["naive", "escape", "ignore", "fake_comp", "combine"]
 DEFENSES = ["no", "instructional", "delimiters", "xml", "sandwich", "random_seq",
             "known-answer", "response-based", "paraphrasing", "retokenization"]
 
-# One entry per model sweep shown in the flow.
+# One entry per sweep shown in the flow.
+#   model_tag / target_dataset / injected_dataset / data_num: the run.py matrix values
+#   scoring: "label" (qwen-style label ASV) or "marker" (strict INJECTED-marker ASR)
 RUNS = [
-    {"id": "qwen3-8b", "label": "qwen3:8b · sentiment injection · Label-ASV",
+    # Final 100-case sweeps on the disjoint sst2final split (strict INJECTED-marker ASR).
+    {"id": "llama3.1-8b-final", "label": "llama3.1:8b · final · INJECTED marker · strict ASR",
+     "model_tag": "ollama_llama3.1-8b", "model": "llama3.1:8b (Ollama)",
+     "target_dataset": "sst2final", "injected_dataset": "injected_marker", "data_num": 100,
+     "sweep": "evidence/final100_llama3.1-8b", "scoring": "marker"},
+    {"id": "mistral-final", "label": "mistral · final · INJECTED marker · strict ASR",
+     "model_tag": "ollama_mistral_final", "model": "mistral:latest (Ollama)",
+     "target_dataset": "sst2final", "injected_dataset": "injected_marker", "data_num": 100,
+     "sweep": "evidence/final100_mistral", "scoring": "marker"},
+    {"id": "qwen3-8b-final", "label": "qwen3:8b · final · INJECTED marker · strict ASR",
      "model_tag": "ollama_qwen3-8b", "model": "qwen3:8b (Ollama)",
-     "injected_dataset": "sst2", "sweep": "evidence/scoring_sweep", "metric": "Label-ASV"},
-    {"id": "mistral", "label": "mistral · INJECTED marker · strict ASR",
+     "target_dataset": "sst2final", "injected_dataset": "injected_marker", "data_num": 100,
+     "sweep": "evidence/final100_qwen3-8b", "scoring": "marker"},
+    # Earlier 20-case pilot sweeps.
+    {"id": "qwen3-8b", "label": "qwen3:8b · pilot · sentiment injection · Label-ASV",
+     "model_tag": "ollama_qwen3-8b", "model": "qwen3:8b (Ollama)",
+     "target_dataset": "sst2", "injected_dataset": "sst2", "data_num": 20,
+     "sweep": "evidence/scoring_sweep", "scoring": "label"},
+    {"id": "mistral", "label": "mistral · pilot · INJECTED marker · strict ASR",
      "model_tag": "ollama_mistral", "model": "mistral:latest (Ollama)",
-     "injected_dataset": "injected_marker", "sweep": "evidence/scoring_marker_mistral",
-     "metric": "Strict ASR"},
+     "target_dataset": "sst2", "injected_dataset": "injected_marker", "data_num": 20,
+     "sweep": "evidence/scoring_marker_mistral", "scoring": "marker"},
 ]
+METRIC = {"label": "Label-ASV", "marker": "Strict ASR"}
 
 KEEP_PREFIXES = (
     "main.py",
@@ -72,10 +95,11 @@ def subgraph():
             for n in nodes], links
 
 
-def prompts(injected_dataset):
-    target = create_task(open_config(CONFIG_DIR / "task_configs" / f"{TARGET_DATASET}_config.json"), DATA_NUM)
-    injected = create_task(open_config(CONFIG_DIR / "task_configs" / f"{injected_dataset}_config.json"),
-                           DATA_NUM, for_injection=True)
+def prompts(run):
+    n = run["data_num"]
+    target = create_task(open_config(CONFIG_DIR / "task_configs" / f"{run['target_dataset']}_config.json"), n)
+    injected = create_task(open_config(CONFIG_DIR / "task_configs" / f"{run['injected_dataset']}_config.json"),
+                           n, for_injection=True)
     app = SimpleNamespace(task=target)
     prompt_defenses = {
         "no": D.Defense, "instructional": D.InstructionalDefense,
@@ -108,21 +132,25 @@ def prompts(injected_dataset):
 def results(run):
     """Per attack x defense: the run's headline metric plus the scored example rows.
 
-    qwen3 (sentiment injection): ASV from the repo's label-based scorer; a row "matches"
-    when it returns the injected label.
-    mistral (marker injection): strict ASR; a row "matches" only when the response is
-    exactly the marker (scoring.py category attack_succeeded). Responses that merely
+    scoring "label" (sentiment injection): ASV from the repo's label-based scorer; a row
+    "matches" when it returns the injected label.
+    scoring "marker" (marker injection): strict ASR; a row "matches" only when the response
+    is exactly the marker (scoring.py category attack_succeeded). Responses that merely
     mention INJECTED are not counted as success.
     """
-    res = {}
+    if run["scoring"] not in METRIC:
+        raise ValueError(f"{run['id']}: unknown scoring {run['scoring']!r}")
+    res, missing = {}, []
     for a in ATTACKS:
         for d in DEFENSES:
-            folder = ROOT / run["sweep"] / f"{run['model_tag']}_{TARGET_DATASET}_{run['injected_dataset']}_{DATA_NUM}_{a}_{d}"
+            folder = ROOT / run["sweep"] / (f"{run['model_tag']}_{run['target_dataset']}_{run['injected_dataset']}"
+                                            f"_{run['data_num']}_{a}_{d}")
             if not folder.exists():
+                missing.append(folder.name)
                 continue
             summary = json.loads((folder / "score_summary.json").read_text())
             rows = [json.loads(l) for l in (folder / "scored_attack.jsonl").read_text().splitlines() if l.strip()]
-            if run["id"] == "mistral":
+            if run["scoring"] == "marker":
                 asr = summary["attacked"]["asr_strict"]
                 matches = lambda r: r["category"] == "attack_succeeded"
             else:
@@ -137,22 +165,35 @@ def results(run):
                                       "matches_injected_label": matches(r), "blocked": r["blocked"]}
                          for r in rows if r["index"] in EXAMPLES},
             }
+    if missing:
+        print(f"warning: {run['id']}: {len(missing)} of {len(ATTACKS) * len(DEFENSES)} result folders missing "
+              f"(shown as '–'), e.g. {run['sweep']}/{missing[0]}")
     return res
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", type=Path, default=OUT, help="output HTML path")
+    ap.add_argument("--vis-src", default=VIS_CDN,
+                    help="vis-network script URL; a local copy must match the pinned SRI hash")
+    args = ap.parse_args()
     nodes, links = subgraph()
     runs = []
     for run in RUNS:
         runs.append({"id": run["id"], "label": run["label"], "model": run["model"],
-                     "metric": run["metric"], "sweep": run["sweep"],
-                     "prompts": prompts(run["injected_dataset"]), "results": results(run)})
+                     "metric": METRIC[run["scoring"]], "sweep": run["sweep"], "n": run["data_num"],
+                     "target_dataset": run["target_dataset"],
+                     "prompts": prompts(run), "results": results(run)})
     data = {"nodes": nodes, "links": links, "runs": runs,
             "attacks": ATTACKS, "defenses": DEFENSES}
-    html = TEMPLATE.read_text().replace("/*__DATA__*/null", json.dumps(data).replace("</", "<\\/"))
-    OUT.write_text(html)
+    template = TEMPLATE.read_text()
+    assert template.count(VIS_CDN) == 1
+    html = (template.replace(VIS_CDN, args.vis_src)
+            .replace("/*__DATA__*/null", json.dumps(data).replace("</", "<\\/")))
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(html)
     counts = ", ".join(f"{r['id']}: {len(r['results'])} runs" for r in runs)
-    print(f"wrote {OUT} ({len(nodes)} nodes, {len(links)} edges; {counts})")
+    print(f"wrote {args.out} ({len(nodes)} nodes, {len(links)} edges; {counts})")
 
 
 if __name__ == "__main__":

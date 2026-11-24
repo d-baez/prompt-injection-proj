@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Prompt-injection attack flow — graphify</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt-injection attack demo — db444</title>
+<meta name="description" content="Step through real prompt-injection attacks and defenses, traced through the Open-Prompt-Injection code graph, with recorded responses from qwen3:8b and mistral.">
 <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"
         integrity="sha384-Ux6phic9PEHJ38YtrijhkzyJ8yQlH8i/+buBR8s3mAZOJrP1gwyvAcIYl3GWtpX1"
         crossorigin="anonymous"></script>
@@ -35,7 +37,16 @@
   #steps div { flex: 1; height: 5px; border-radius: 3px; background: #2a2a4e; cursor: pointer; transition: background .3s; }
   #steps div.done { background: #4a4a7a; } #steps div.cur { background: var(--trusted); }
   #steps div.bad { background: var(--inject); } #steps div.good { background: var(--data); }
-  #stepbox { flex: 1; overflow-y: auto; }
+  #stepbox { flex: 1 1 auto; min-height: 240px; overflow-y: auto; }
+  #matrixsec { flex: 0 1 auto; max-height: 42vh; overflow-y: auto; }
+  @media (max-width: 900px) {
+    body { flex-direction: column; height: auto; overflow: auto; }
+    #wrap { flex: none; height: 55vh; min-height: 320px; }
+    #panel { width: 100%; border-left: none; border-top: 1px solid var(--line); overflow: visible; }
+    #stepbox, #matrixsec { max-height: none; overflow: visible; }
+    #title h1 { font-size: 13px; } #title p { display: none; }
+    #legend { font-size: 10px; }
+  }
   #stepnum { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
   #steptitle { font-size: 15px; font-weight: 600; margin: 2px 0 4px; }
   #stepref { font: 11px ui-monospace, Menlo, monospace; color: var(--muted); }
@@ -88,7 +99,7 @@
       <button class="primary" id="play">▶ Play</button>
       <button id="prev">◀</button><button id="next">▶|</button><button id="restart">↺</button>
       <label style="flex-direction:row;align-items:center;gap:6px">speed<input type="range" id="speed" min="0.4" max="2.5" step="0.1" value="1"></label>
-      <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="follow" checked>follow</label>
+      <label style="flex-direction:row;align-items:center;gap:4px"><input type="checkbox" id="follow" checked onchange="if (!this.checked) cam = null">follow</label>
     </div>
     <div id="steps"></div>
   </div>
@@ -99,9 +110,9 @@
     <div id="stepdesc"></div>
     <div id="stepextra"></div>
   </div>
-  <div class="sec">
-    <div class="sub">Attack × defense for each model · n=20 · click a cell to load it in the walkthrough</div>
-    <div class="sub" style="opacity:.7;font-size:11px">Metrics differ by sweep (see each heading). Mistral known-answer blocks are an exact-match artifact (evidence/scoring_marker_mistral/FINDINGS.md §2).</div>
+  <div class="sec" id="matrixsec">
+    <div class="sub">Attack × defense for each sweep (sample count in each heading) · click a cell to load it in the walkthrough</div>
+    <div class="sub" style="opacity:.7;font-size:11px">Metrics differ by sweep (see each heading). Mistral known-answer blocks are an exact-match artifact: Mistral answers the secret with a leading space (evidence/final100_mistral/FINDINGS.md, evidence/scoring_marker_mistral/FINDINGS.md §2).</div>
     <div id="matrix"></div>
   </div>
 </div>
@@ -194,7 +205,7 @@ function buildSteps(a, d, exIdx) {
   const S = [];
 
   S.push({ node: pick('main_execute'), color: C.trusted, title: 'execute() wires up the experiment', ref: 'main.py · execute()',
-    desc: `Loads three configs — target task <code>${pr.target_task}</code> (${RUN.prompts.target_task === 'sentiment_analysis' ? 'SST-2' : ''}), injected task, and the model <code>${esc(RUN.model)}</code> — then builds each component via the factory functions.` });
+    desc: `Loads three configs — target task <code>${pr.target_task}</code> (dataset <code>${esc(RUN.target_dataset)}</code>, n=${RUN.n}), injected task, and the model <code>${esc(RUN.model)}</code> — then builds each component via the factory functions.` });
   S.push({ node: pick(`${P}tasks_targettask_targettask_getitem`, `${P}tasks_targettask_targettask`), via: [pick(`${P}tasks_init_create_task`)], color: C.trusted,
     title: 'TargetTask: the job the app is supposed to do', ref: 'tasks/TargetTask.py · create_task(target_config)',
     desc: `The trusted instruction plus one clean sample (sample #${ex.idx}, true label <code>${ex.label ? 'positive' : 'negative'}</code>).`,
@@ -245,7 +256,7 @@ function buildSteps(a, d, exIdx) {
       prompt: { h: 'final prompt sent to the model', segs: segments(finalPrompt, parts), extraCls: wraps ? 'defense' : null },
       extra: keys(['trusted', 'trusted instruction'], ['data', 'clean data'], ['inject', 'injected'], [wraps ? 'defense' : 'scaffold', wraps ? 'defense wrapper' : 'template']) });
     S.push({ node: pick(`${P}models_model_model_query`), color: C.inject, title: 'Model.query() — the LLM answers', ref: `models/Ollama.py · ${esc(RUN.model)}`,
-      desc: 'Real response recorded in <code>${RUN.sweep}</code>:',
+      desc: `Real response recorded in <code>${esc(RUN.sweep)}</code>:`,
       prompt: row ? { h: 'raw model response', segs: [{ cls: row.matches_injected_label ? 'inject' : (row.category === 'correct_label' ? 'data' : 'defense'), s: row.raw_response || '(empty)' }] } : null });
     S.push({ node: defNode(d, 'process_response'), color: d === 'response-based' ? C.defense : C.inject, title: 'defense.process_response()', ref: `${DEF_PY[d]}.process_response(response)`,
       desc: d === 'response-based' ? 'Outputs that aren\'t a valid label for the target task are replaced with "". A valid-but-wrong label still gets through.' : 'Identity — response returned as-is.' });
@@ -260,7 +271,7 @@ function buildSteps(a, d, exIdx) {
     color: verdict[0] === 'v-bad' ? C.inject : verdict[0] === 'v-good' ? C.good : C.defense, final: verdict[0],
     title: 'Evaluator scores the attack', ref: 'evaluator/Evaluator.py · __calc_ASV() + evaluator/scoring.py',
     desc: '', extra: `<div class="verdict ${verdict[0]}">${verdict[1]}<small>${verdict[2]}</small></div>` +
-      (run ? `<div class="prompt"><span class="h">whole run · ${a} × ${d} · n=20</span>${RUN.metric} ${(run.asr * 100).toFixed(0)}%   clean accuracy ${(run.clean_acc * 100).toFixed(0)}%\n` +
+      (run ? `<div class="prompt"><span class="h">whole run · ${a} × ${d} · n=${RUN.n}</span>${RUN.metric} ${(run.asr * 100).toFixed(0)}%   clean accuracy ${(run.clean_acc * 100).toFixed(0)}%\n` +
              `blocked ${c.blocked} · hijacked/incorrect ${c.incorrect_label} · invalid ${c.invalid} · correct ${c.correct_label}</div>` : '') });
   return S.filter(s => s.node);
 }
@@ -271,6 +282,22 @@ const dur = () => 3200 / speed;
 const travel = () => Math.max(650, Math.min(1700, dur() * .5));
 const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const CAM_SCALE = 1.05;
+// Camera follow. Never pass an animation to network.moveTo: in vis-network 9.1.6, starting a
+// second animated move before the first has drawn a frame leaves the first one's redraw
+// listener attached, and it replays forever (the view keeps snapping back and sweeping).
+// We tween here on wall-clock time and only ever make instant moves.
+let cam = null;
+function camTo(id, ms) {
+  if (!$('follow').checked || !id) { cam = null; return; }
+  cam = { from: network.getViewPosition(), s0: network.getScale(), to: network.getPosition(id), t0: performance.now(), T: ms };
+}
+function camStep(now) {
+  if (!cam) return;
+  const t = Math.min(1, (now - cam.t0) / cam.T), e = ease(t);
+  network.moveTo({ position: { x: cam.from.x + (cam.to.x - cam.from.x) * e, y: cam.from.y + (cam.to.y - cam.from.y) * e },
+                   scale: cam.s0 + (CAM_SCALE - cam.s0) * e, animation: false });
+  if (t >= 1) cam = null;
+}
 
 function resetVisuals() {
   nodes.update(DATA.nodes.map(n => ({ id: n.id, size: 7, color: { background: n._c || baseColor(n), border: baseColor(n) },
@@ -290,7 +317,7 @@ function go(i, animate = true) {
       for (const n of chain) { if (prev) trail.push([prev, n, s.color]); light(n, s.color, n === s.node && k === i); prev = n; }
     }
     cur = i; show(false);
-    if ($('follow').checked) network.moveTo({ position: network.getPosition(steps[i].node), scale: CAM_SCALE, animation: { duration: 500, easingFunction: 'easeInOutCubic' } });
+    camTo(steps[i].node, 500);
     return;
   }
   if (packet) finishPacket();
@@ -299,8 +326,7 @@ function go(i, animate = true) {
   if (from) light(from, steps[i - 1].color, false);
   const path = from ? [from, ...chain] : chain;
   packet = { path, t0: performance.now(), T: travel(), color: s.color, lit: new Set(from ? [0] : []), target: s.node };
-  if ($('follow').checked) network.moveTo({ position: network.getPosition(s.node), scale: CAM_SCALE,
-    animation: { duration: packet.T, easingFunction: 'easeInOutCubic' } });
+  camTo(s.node, packet.T);
   show(true);
 }
 function finishPacket() {
@@ -389,7 +415,10 @@ network.on('afterDrawing', ctx => {
     }
   });
 });
-(function loop() { if (packet || ripples.length || trail.length) network.redraw(); requestAnimationFrame(loop); })();
+(function loop(now) { camStep(now || performance.now());
+  if (packet || ripples.length || trail.length) network.redraw(); requestAnimationFrame(loop); })();
+// The visitor takes over the camera by dragging or zooming; unchecking follow stops it too.
+network.on('dragStart', () => { cam = null; }); network.on('zoom', () => { cam = null; });
 
 // ---------- controls ----------
 const fill = (sel, items, fmt = x => x) => { $(sel).innerHTML = items.map((v, i) => `<option value="${typeof v === 'number' ? i : v}">${fmt(v, i)}</option>`).join(''); };
@@ -397,36 +426,42 @@ fill('model', DATA.runs.map((_, i) => i), (_, i) => DATA.runs[i].label);
 fill('attack', DATA.attacks); fill('defense', DATA.defenses);
 fill('example', RUN.prompts.examples.map((_, i) => i), (_, i) => `#${RUN.prompts.examples[i].idx}`);
 $('attack').value = 'combine'; $('defense').value = 'no';
-$('model').onchange = () => { RUN = DATA.runs[+$('model').value]; rebuild(); };
-$('subtitle').textContent = `${DATA.nodes.length} code nodes from graphify-out/graph.json · target ${RUN.prompts.target_task} · model ${RUN.model}`;
+const setSubtitle = () => { $('subtitle').textContent = `${DATA.nodes.length} code nodes from graphify-out/graph.json · target ${RUN.prompts.target_task} · model ${RUN.model}`; };
+setSubtitle();
 
 function rebuild() {
   setPlaying(false);
   RUN = DATA.runs[+$('model').value];
+  const keepEx = $('example').value;
   fill('example', RUN.prompts.examples.map((_, i) => i), (_, i) => `#${RUN.prompts.examples[i].idx}`);
+  if ([...$('example').options].some(o => o.value === keepEx)) $('example').value = keepEx;
+  setSubtitle();
   steps = buildSteps($('attack').value, $('defense').value, +$('example').value);
   $('steps').innerHTML = steps.map(() => '<div></div>').join('');
   [...$('steps').children].forEach((el, k) => el.onclick = () => { setPlaying(false); go(k, false); });
   resetVisuals(); cur = -1; go(0, false);
   drawMatrix();
 }
-['attack', 'defense', 'example'].forEach(id => $(id).onchange = rebuild);
+['model', 'attack', 'defense', 'example'].forEach(id => $(id).onchange = rebuild);
 $('play').onclick = () => setPlaying(!playing);
 $('next').onclick = () => { setPlaying(false); go(cur + 1); };
 $('prev').onclick = () => { setPlaying(false); go(cur - 1, false); };
 $('restart').onclick = () => { resetVisuals(); cur = -1; go(0, false); setPlaying(true); };
 $('speed').oninput = e => speed = +e.target.value;
+const formCtl = t => ['SELECT', 'INPUT', 'TEXTAREA'].includes(t.tagName);
 document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'SELECT') return;
-  if (e.key === ' ') { e.preventDefault(); setPlaying(!playing); }
-  if (e.key === 'ArrowRight') $('next').click(); if (e.key === 'ArrowLeft') $('prev').click();
+  if (formCtl(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === ' ') { e.preventDefault(); if (!e.repeat) setPlaying(!playing); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
 });
+document.addEventListener('keyup', e => { if (e.key === ' ' && e.target.tagName === 'BUTTON') e.preventDefault(); });
 
 function drawMatrix() {
   const A = DATA.attacks, Ds = DATA.defenses, host = $('matrix');
   const cur = DATA.runs.indexOf(RUN);
   host.innerHTML = DATA.runs.map((run, ri) => {
-    let h = `<div class="mhead">${esc(run.label)}</div>`;
+    let h = `<div class="mhead">${esc(run.label)} · n=${run.n}</div>`;
     h += `<div class="mgrid" style="grid-template-columns:78px repeat(${A.length}, 1fr)"><div></div>` + A.map(a => `<div class="hd">${a}</div>`).join('');
     for (const d of Ds) {
       h += `<div class="hd" style="text-align:right;padding-right:4px">${d}</div>`;
