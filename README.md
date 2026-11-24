@@ -2,6 +2,12 @@
 
 > This is a course fork of the original toolkit. For the upstream project, its full documentation, and the original README, see **[liu00222/Open-Prompt-Injection](https://github.com/liu00222/Open-Prompt-Injection/blob/main/README.md)**.
 
+## Final Evidence (ECE 424, Topic L02)
+
+Start at **[`evidence/FINAL_EVIDENCE.md`](evidence/FINAL_EVIDENCE.md)**: each claim on the final slides, mapped to its
+evidence file and commit. Final runs: 100 disjoint SST-2 cases × 5 attacks × 10 defenses on qwen3:8b, mistral 7B and
+llama3.1:8b. Frozen as tag `final-evidence-2026-11-24.1`.
+
 ## Midpoint Evidence Package (ECE 424, Topic L02)
 
 Project: *Evaluating Defenses Against Prompt Injection Attacks*. Team: Daniel Báez (dmb574) and Michael Cardenas (mac934).
