@@ -6,7 +6,7 @@
 
 Start at **[`evidence/FINAL_EVIDENCE.md`](evidence/FINAL_EVIDENCE.md)**: each claim on the final slides, mapped to its
 evidence file and commit. Final runs: 100 disjoint SST-2 cases × 5 attacks × 10 defenses on qwen3:8b, mistral 7B and
-llama3.1:8b. Frozen as tag `final-evidence-2026-11-24.1`.
+llama3.1:8b. Frozen as tag `final-evidence-2026-11-24.2`.
 
 ## Midpoint Evidence Package (ECE 424, Topic L02)
 
