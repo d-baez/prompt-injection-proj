@@ -2,9 +2,9 @@
 
 ECE 424, Rutgers, Fall 2026. Topic L02. Team: Daniel Báez (dmb574), Michael Cardenas (mac934).
 
-**Frozen copy:** tag [`final-evidence-2026-11-24.1`](https://github.com/d-baez/prompt-injection-proj/tree/final-evidence-2026-11-24.1)
+**Frozen copy:** tag [`final-evidence-2026-11-24.2`](https://github.com/d-baez/prompt-injection-proj/tree/final-evidence-2026-11-24.2)
 on `d-baez/prompt-injection-proj`, plus a release zip of `evidence/` and the slides PDF. Relative links in this file
-resolve inside that tag, so they don't change if `main` moves. It adds the Llama 3.1 8B run to the first freeze,
+resolve inside that tag, so they don't change if `main` moves. It adds the Llama 3.1 8B run (first in `final-evidence-2026-11-24.1`) and credit for the sweep runner (§7) to the first freeze,
 [`final-evidence-2026-11-24`](https://github.com/d-baez/prompt-injection-proj/tree/final-evidence-2026-11-24) (qwen and Mistral only).
 
 Previous submission: [`midpoint/MIDPOINT_UPDATE.md`](midpoint/MIDPOINT_UPDATE.md).
@@ -89,9 +89,9 @@ Previous submission: [`midpoint/MIDPOINT_UPDATE.md`](midpoint/MIDPOINT_UPDATE.md
 
 ## 7. Work by member
 
-**Daniel Báez:** Ollama runner and model configs (`edd8945`, `0a4831d`, `da89397`), injected-marker task and matrices (`20550f5`), qwen thinking fix and blocked-aware scorer change (`facfeba`), marker sweeps for both models (`26ec50e`), SST-2 sweep rerun with thinking off (`3f600ce`), repo-rule ASV/PNA-T port (`793ad3d`), disjoint final split and final configs (`a3f35ab`), the final sweeps, and this index.
+**Daniel Báez:** Ollama runner and model configs (`edd8945`, `0a4831d`, `da89397`), injected-marker task and matrices (`20550f5`), qwen thinking fix and blocked-aware scorer change (`facfeba`), marker sweeps for both models (`26ec50e`), SST-2 sweep rerun with thinking off (`3f600ce`), repo-rule ASV/PNA-T port (`793ad3d`), disjoint final split and final configs (`a3f35ab`), the qwen and Mistral final sweeps, and this index.
 
-**Michael Cardenas:** strict output scorer, scoring script, defense verification, defense prompt trace, design doc and tests (`ca12f1f`); strict re-scoring of the midpoint run with reconstructed labels (`653343a`).
+**Michael Cardenas:** strict output scorer, scoring script, defense verification, defense prompt trace, design doc and tests (`ca12f1f`); strict re-scoring of the midpoint run with reconstructed labels (`653343a`); one-command defense sweep runner and the llama3.1:8b config and matrix, used for the Llama final run (`3a02d5c`).
 
 ## 8. Reproduce
 
