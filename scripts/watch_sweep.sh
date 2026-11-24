@@ -1,16 +1,33 @@
 #!/usr/bin/env bash
 # Live view of the Ollama marker sweeps: overall progress per sweep and the
 # tqdm bar of the experiment currently running. Ctrl-C to stop.
-# Usage: scripts/watch_sweep.sh [final] [refresh_seconds]
+# Usage: scripts/watch_sweep.sh [final|llama] [refresh_seconds]
 #   final: watch the 100-case final sweeps (both models log to log/final100_runs.log)
+#   llama: watch the llama3.1:8b 100-case sweep (counted from result/ folders)
 cd "$(dirname "$0")/.." || exit 1
 final=0
+llama=0
 if [[ "$1" == "final" ]]; then final=1; shift; fi
+if [[ "$1" == "llama" ]]; then llama=1; shift; fi
 refresh="${1:-5}"
 
 while true; do
   clear
   date
+  if (( llama )); then
+    pat="ollama_llama3.1-8b_sst2final_injected_marker_100_"
+    done_n=$(ls result/${pat}*/experiment.json 2>/dev/null | wc -l | tr -d ' ')
+    current=$(ls -t log/${pat}*.txt 2>/dev/null | head -1)
+    echo
+    echo "[llama3.1-8b] $done_n/50 completed"
+    if [[ -n "$current" ]]; then
+      name=$(basename "$current" .txt)
+      [[ -f "result/$name/experiment.json" ]] || echo "  running: ${name#${pat}}"
+      tr '\r' '\n' < "$current" | grep -o "Querying:.*sample[^]]*]" | tail -1 | sed 's/^/  /'
+    fi
+    sleep "$refresh"
+    continue
+  fi
   for model in mistral qwen3-8b; do
     echo
     if (( final )); then
