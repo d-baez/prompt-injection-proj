@@ -22,3 +22,6 @@ form_builder.py
 
 # Generated knowledge graph outputs
 graphify-out/
+
+# Local Claude Code settings
+.claude/
