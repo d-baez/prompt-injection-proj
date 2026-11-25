@@ -8,8 +8,8 @@ Project: *Evaluating Defenses Against Prompt Injection Attacks*. Team: Daniel BÃ
 
 - **Start here:** [`evidence/FINAL_EVIDENCE.md`](evidence/FINAL_EVIDENCE.md). It maps each claim on the final slides to
   its evidence file and commit.
-- **Frozen copy:** tag [`final-evidence-2026-11-24.4`](https://github.com/d-baez/prompt-injection-proj/tree/final-evidence-2026-11-24.4),
-  with a [release zip of `evidence/`](https://github.com/d-baez/prompt-injection-proj/releases/tag/final-evidence-2026-11-24.4)
+- **Frozen copy:** tag [`final-evidence-2026-11-24.5`](https://github.com/d-baez/prompt-injection-proj/tree/final-evidence-2026-11-24.5),
+  with a [release zip of `evidence/`](https://github.com/d-baez/prompt-injection-proj/releases/tag/final-evidence-2026-11-24.5)
   and its `SHA256SUMS.txt`.
 - **Attack demo:** [db444.xyz/attack-demo](https://db444.xyz/attack-demo/) animates one attack through the repo's code
   graph for any model, attack and defense. See [Attack demo](#attack-demo) below.
